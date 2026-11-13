@@ -6,20 +6,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.rakovpublic.jneopallium</groupId>
+        <groupId>io.github.rakovpublic.jneopallium</groupId>
         <artifactId>wrapper</artifactId>
         <version>1.0</version>
     </parent>
     <artifactId>master</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
+    <description>Cluster coordinator: partitions each layer across the registered workers, holds the run configuration and serves the results.</description>
     <name>jneuronnet.master</name>
     <url>https://github.com/rakovpublic/jneopallium</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.rakovpublic.jneopallium</groupId>
-            <artifactId>worker</artifactId>
+            <groupId>io.github.rakovpublic.jneopallium</groupId>
+            <artifactId>worker-core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
@@ -27,6 +28,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <!-- The worker logs through log4j-slf4j2-impl. Keeping Spring's default logback
+                     plus log4j-to-slf4j next to it makes log4j refuse to initialise
+                     ("log4j-slf4j2-impl cannot be present with log4j-to-slf4j") and the master
+                     dies before the context starts. -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- War packaging needs the servlet container in `provided` scope -->
         <dependency>
@@ -56,6 +67,16 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
+                <executions>
+                    <!-- The build does not inherit spring-boot-starter-parent, so the repackage
+                         goal has to be bound explicitly; without it the war has no main manifest
+                         and cannot be started with java -jar. -->
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
